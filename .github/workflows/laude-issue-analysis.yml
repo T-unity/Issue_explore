@@ -1,0 +1,51 @@
+name: Claude Issue Root Cause Analysis
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  analyze-issue:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write # Issueにコメントを書き込むために必要な権限
+      contents: read
+
+    steps:
+      - name: Run Claude Issue Analysis
+        id: claude-analysis # 後続のステップで結果を参照するためにIDを付与
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # model: "claude-3-opus-20240229" # より高度な分析が必要な場合はOpusを推奨
+
+          # Issue分析と深掘りを指示するプロンプト
+          direct_prompt: |
+            以下のIssueのタイトルと本文を分析してください。
+            目的は、報告されている表面的な問題から、その背後にある「真の根本原因」を特定することです。
+
+            **分析手法:**
+            「なぜなぜ分析（5 Whys）」のような手法を思考プロセスに用いて、問題を段階的に深掘りしてください。
+            「なぜこの問題が起きたのか？」という問いを繰り返し、抽象的または表面的な原因から、より具体的で根本的な原因へと掘り下げてください。
+
+            **出力形式:**
+            最終的な分析結果を、以下の構造で分かりやすくまとめてください。
+            1. **報告された問題の要約:**
+            2. **根本原因分析の過程（思考プロセス）:**
+            3. **特定された根本原因:**
+            4. **推奨される次のアクション:**
+
+            ---
+            **Issue Title:** ${{ github.event.issue.title }}
+            **Issue Body:**
+            ${{ github.event.issue.body }}
+
+      - name: Post analysis as a comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            🤖 **ClaudeによるIssueの根本原因分析が完了しました。**
+
+            ---
+            ${{ steps.claude-analysis.outputs.review_body }}
