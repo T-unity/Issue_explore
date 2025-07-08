@@ -10,6 +10,7 @@ jobs:
     permissions:
       issues: write # Issueにコメントを書き込むために必要な権限
       contents: read
+      id-token: write
 
     steps:
       - name: Run Claude Issue Analysis
